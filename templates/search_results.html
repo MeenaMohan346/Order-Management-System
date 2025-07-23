@@ -1,0 +1,81 @@
+<!-- <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Search Results</title>
+    </head>
+    <body>
+        <h1>Fetched Data</h1>
+        {% if results %}
+            <ul>
+            {% for row in results %}
+                <li>{{ row }}</li> {# Displays each row as a whole #}
+                {# Or access individual columns if 'row' is a tuple/list #}
+                {# <li>{{ row[0] }} - {{ row[1] }}</li> #}
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>No data found.</p>
+        {% endif %}
+    </body>
+    </html> -->
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Order Management Details</title>     
+
+{% endblock %}
+
+{% block body %} 
+
+    <div class="container">    
+        <h2>Order Management System</h2> 
+        {% with messages = get_flashed_messages() %}
+            {% if messages %} 
+            <ul> {% for message in messages %}
+                <li>{{ message }}</li> 
+                {% endfor %} 
+            </ul> 
+        {% endif %} {% endwith %}            
+                         
+            
+            <div class="data-display">                
+
+     
+
+    {% if results %}
+        <h2>Search Results</h2>
+        <table>
+            <thead>
+                <tr style="background-color: lightgray;">
+                    <th>Customer ID</th>
+                    <th>Customer Name</th>
+                    <th>Customer Email</th>
+                    <th>Customer Phone Number</th>
+                    <th>Customer Shipping Address</th>                    
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in results %}
+                    <tr>
+                        <td>{{ row.id }}</td>                         
+                        <td>{{ row.customer_name }}</td>
+                        <td>{{ row.email }}</td>
+                        <td>{{ row.phone_number }}</td>
+                        <td>{{ row.shipping_address }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% elif request.method == 'POST' %}
+        <p>No customers found matching your criteria.</p>
+    {% endif %}
+
+    </div>      <!--  class="data-display"  -->       
+
+<footer>    
+     <p><a href="{{ url_for('admin_page') }}">Go to Admin Page</a></p>
+                    
+</footer>
+</div>     <!-- container -->
+</body>
+{% endblock %}

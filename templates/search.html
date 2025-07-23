@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Order Management Details</title>     
+
+{% endblock %}
+
+{% block body %}
+ 
+
+    <div class="container">    
+        <h2>Order Management System</h2> 
+        {% with messages = get_flashed_messages() %}
+            {% if messages %} 
+            <ul> {% for message in messages %}
+                <li>{{ message }}</li> 
+                {% endfor %} 
+            </ul> 
+        {% endif %} {% endwith %}            
+                         
+            
+            <div class="data-display">                
+
+    <h3>Customer Search</h3>
+    <h4> To retrieve all the customers data, please click search button</h4>
+
+    <form id="searchForm" method="POST" action="/search">
+        <div style="vertical-align: middle;">
+            <div>
+                <label for="id">Customer ID:</label>
+                <input type="number" name="id" id="id" placeholder="Search Customer ID"/>
+            </div>
+            <div>
+                <label for="customer_name">Customer Name:</label>
+                <input type="text" name="customer_name" id="customer_name" placeholder="Search Customer Name"/>
+            </div>
+            <div>
+                <label for="email">Email:</label>
+                <input type="text" name="email" id="email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="Invalid email address" placeholder="Search Email" />
+            </div>
+            <div>
+                <label for="phone_number">Phone Number:</label>
+                <input type="text" name="phone_number" id="phone_number" pattern="[1-9]{1}[0-9]{9}" title="Enter 10 digit mobile number" placeholder="Search Phone number" />
+            </div>            
+        </br>        
+        <!-- <select id="category" name="category">
+            {% for cat in categories %}
+                <option value="{{ cat }}" {% if cat == selected_category %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+        </select> -->
+        <div class="button-center">
+        <button type="submit" id="search"><img src="{{url_for('static',filename='/images/search.png')}}" alt="" style="background-color: blue;"> </button>
+        </div>
+        </div>
+    </form>
+
+    
+
+    </div>      <!--  class="data-display"  -->       
+</div>     <!-- container -->
+</body>
+{% endblock %}

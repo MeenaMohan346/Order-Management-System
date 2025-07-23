@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Order Management Details</title>
+
+    <script src="/static/js/update.js"></script>  
+    <script src="/static/js/validate.js"></script>
+    
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>  
+    
+
+{% endblock %}
+
+{% block body %} 
+
+    <div class="container">    
+        <h2>Order Management System</h2> 
+        {% with messages = get_flashed_messages() %}
+            {% if messages %} 
+            <ul> {% for message in messages %}
+                <li style="color: red; font-size: 1.2em; font-weight: bold;">{{ message }}</li> 
+                {% endfor %} 
+            </ul> 
+        {% endif %} {% endwith %}
+           
+            <form method="POST">
+                <div class="button-row"  id="top_buttons">
+                <button type="submit"  name="button_name" value="button_a">Customers</button>                               
+                <button type="submit"  name="button_name" value="button_b">Products</button>                
+                <button type="submit"  name="button_name" value="button_c">Orders</button>               
+                <button type="submit"  name="button_name" value="button_d">Orders Details</button>
+                </div> 
+            </form>                           
+            
+            <div class="data-display">                
+                         
+            {% if customers %}
+            <h3>Customers Data</h3> 
+            <table>  
+                    <tr style="background-color: lightgray;">
+                        <th>ID</th>
+                        <th>Customer Name</th>
+                        <th>Email</th>
+                        <th>Phone Number</th>
+                        <th>Shipping Address</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>{{ customer.id }}</td>
+                        <td>{{ customer.customer_name }}</td>
+                        <td>{{ customer.email }}</td>
+                        <td>{{ customer.phone_number }}</td>
+                        <td>{{ customer.shipping_address }}</td>
+                        <td>                           
+                                                  
+                            <a href="/delete/customers/{{customer.id}}" onclick="return confirm('Are you sure you want to delete this row?');" class="modalbutton">Delete</a>                          
+                                                                             
+                            <div style="vertical-align: middle;" class="modal-button">
+                                <button type="button" class="modalbutton" onclick="openEditModal('customers', '{{ customer.id }}')">Edit</button>
+                            </div>
+                            
+  <div class="modal fade" id="editModal{{customer.id}}" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content" style="background-color:#383434">
+      <div class="modal-header">
+        <h2 class="modal-title" id="editModal{{customer.id}}" style="color:white">Edit Customer</h2>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" style="background-color:#f3d1ee">
+        <form id="editForm" method="POST" action="/update/customers/{{customer.id}}">            
+          <div class="form-group padded-input">
+            <label class="col-form-label" for="editId">ID</label>
+            <input type="text" style="background-color:#CDCDCD;" class="form-control" name="id" value="{{customer.id}}" id="editId" disabled />
+          </div>
+          <div class="form-group">
+            <label class="col-form-label" for="editCustomername">Customer Name</label>
+            <input type="text" style="background-color:#CDCDCD" class="form-control" name="customer_name" value="{{customer.customer_name}}" id="editCustomername" required minlength="5" maxlength="50"/>
+            <span id="usernameError" style="color: red;"></span>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label" for="editEmail">Email</label>
+            <input type="text" style="background-color:#CDCDCD" class="form-control" name="email" value="{{customer.email}}" id="editEmail" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="Invalid email address" maxlength="50" required />
+            <span id="emailError" style="color: red;"></span>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label" for="editPhonenumber">Phone Number</label>
+            <input type="text" style="background-color:#CDCDCD" class="form-control" name="phone_number" value="{{customer.phone_number}}" id="editPhonenumber" pattern="[1-9]{1}[0-9]{9}" title="Enter 10 digit phone number" placeholder="Phone number" required/>
+            <span id="phonenumberError" style="color: red;"></span>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label" for="editShippingaddress">Shipping Address</label>
+            <input type="text" style="background-color:#CDCDCD"  class="form-control" name="shipping_address" value="{{customer.shipping_address}}" id="editShippingaddress" required minlength="5" maxlength="100"/>
+            <span id="shippingaddressError" style="color: red;"></span>
+          </div>
+          </br>
+          </br> 
+          <div class="button-center">                    
+            <button type="submit" class="btn btn-primary btn-save">Save Changes</button>
+        </div>          
+        </form>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+
+                                                   
+                        </td>
+                    </tr>
+                {% endfor %}
+
+        </table> 
+        
+        <form action="/create/customers" method="POST">
+            <div style="vertical-align: middle;">
+                <div>
+                    <label for="customer_name">Customer Name:</label>
+                    <input type="text" name="customer_name" id="customer_name" required minlength="5" maxlength="50" placeholder="Customer Name" class="input-field animation a3"/>
+                </div>
+                <div>
+                    <label for="email">Email:</label>
+                    <input type="text" name="email" id="email" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="Invalid email address" maxlength="50" placeholder="Email" class="input-field animation a3"/>
+                </div>
+                <div>
+                    <label for="phone_number">Phone Number:</label>
+                    <input type="text" name="phone_number" id="phone_number" pattern="[1-9]{1}[0-9]{9}" title="Enter 10 digit mobile number" placeholder="Phone number" class="input-field animation a3" />
+                </div>
+                <div>
+                    <label for="shipping_address">Shipping Address:</label>
+                    <input type="text" name="shipping_address" id="shipping_address" placeholder="Shipping Address" class="input-field animation a3" />
+                </div>
+                <div class="button-container">
+                    <input type="submit" value="Add Customer" id="add_customer" style="background: linear-gradient(to right, #d93280 0%, #44118c 100%);" class="animation a6"/>
+                </div>
+            </div>
+        </form>
+        
+    
+    {% endif %} 
+   
+    
+     <!-- Product table data -->
+     
+                
+                {% if products %}
+                <h3>Products Data</h3>
+                <table>  
+                    <tr style="background-color: lightgray;">
+                        <th>ID</th>
+                        <th>Product Name</th>
+                        <th>Description</th>
+                        <th>Unit Price</th>
+                        <th>Stock Quantity</th>
+                        <th>Actions</th>
+                    </tr>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.id }}</td>
+                        <td>{{ product.product_name }}</td>
+                        <td>{{ product.description }}</td>
+                        <td>{{ product.unit_price }}</td>
+                        <td>{{ product.stock_quantity }}</td>
+                        <td>                            
+                            <a href="/delete/products/{{product.id}}" onclick="return confirm('Are you sure you want to delete this row?');" class="modalbutton">Delete</a>
+                             <div style="vertical-align: middle;">
+                                <button type="button" class="modalbutton" onclick="openEditModal('products', '{{ product.id }}')">Edit</button>
+                            </div>                            
+                           
+  <div class="modal fade" id="editModal{{product.id}}" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content" style="background-color:#383434">
+      <div class="modal-header">
+        <h2 class="modal-title" id="editModal{{product.id}}" style="color:white">Edit Product</h2>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" style="background-color:#f3d1ee">
+        <form id="editForm" method="POST" action="/update/products/{{product.id}}">            
+          <div class="form-group padded-input">
+            <label class="col-form-label" for="editId">ID</label>         
+            <input type="text" style="background-color:#CDCDCD" class="form-control" name="id" value="{{product.id}}" id="editId" disabled />
+          </div>
+          <div class="form-group">
+            <label class="col-form-label" for="editProductname">Product Name</label>
+            <input type="text" style="background-color:#CDCDCD" class="form-control" name="product_name" value="{{product.product_name}}" id="editProductname" maxlength="50" required/>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label" for="editDescription">Description</label>
+            <input type="text" style="background-color:#CDCDCD" class="form-control" name="description" value="{{product.description}}" id="editDescription" maxlength="100"/>
+          </div>
+          <div class="form-group">
+            <label class="col-form-label" for="editUnitprice">Unit Price</label>
+            <input type="number" style="background-color:#CDCDCD" class="form-control" name="unit_price" value="{{product.unit_price}}" id="editUnit_price" step="0.01" min="0" required />
+          </div>
+          <div class="form-group">
+            <label class="col-form-label" for="editStockquantity">Stock Quantity</label>
+            <input type="number" style="background-color:#CDCDCD"  class="form-control" name="stock_quantity" value="{{product.stock_quantity}}" id="editStockquantity" />
+          </br>
+          </br>
+           <div class="button-center">
+            <button type="submit" class="btn btn-primary btn-save">Save Changes</button>
+           </div>
+        </div>
+          
+        </form>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+
+                                                   
+                        </td>
+                    </tr>
+                {% endfor %}
+
+        </table>        
+    
+    <form action="/create/products" method="POST">
+            <div style="vertical-align: middle;">
+                <div>
+                    <label for="product_name">Product Name:</label>
+                    <input type="text" name="product_name" id="product_name" maxlength="50" required class="input-field animation a3" />
+                </div>
+                <div>
+                    <label for="description">Description:</label>
+                    <input type="text" name="description" id="description" maxlength="100"class="input-field animation a3" />
+                </div>
+                <div>
+                    <label for="unit_price">Unit Price:</label>
+                    <input type="number" name="unit_price" id="unit_price" step="0.01" min="0" required class="input-field animation a3" />
+                </div>
+                <div>
+            <label for="stock_quantity">Stock Quantity:</label>
+             <input type="number" name="stock_quantity" id="stock_quantity" class="input-field animation a3" />
+                </div>
+                <div class="button-container">
+            <input type="submit" value="Add Product" id="add_product" style="background: linear-gradient(to right, #d93280 0%, #44118c 100%);" />
+                </div>
+        </div>        
+    </form> 
+    {% endif %}
+    
+
+    <!-- Orders tablle data -->
+    
+                
+                {% if orders %}
+                <!-- Display orders if they exist -->
+                 <h3>Orders Data</h3>
+                <table>  
+                    <tr style="background-color: lightgray;">
+                        <th>ID</th>
+                        <th>Customer ID</th>
+                        <th>Region</th>                        
+                        <th>Order Date</th>                        
+                        <th>Actions</th>
+                    </tr>
+                    {% for order in orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.customer_id }}</td>
+                        <td>{{ order.region }}</td>                       
+                        <td>{{ order.order_date }}</td>                        
+                        <td>                            
+                            <a href="/delete/orders/{{order.id}}" onclick="return confirm('Are you sure you want to delete this row?');" class="modalbutton">Delete</a>
+                                        
+                            
+                            <div style="vertical-align: middle; padding-left: 130px;"> 
+                              <form action="/update_order_form/orders/{{order.id}}" method="POST">                                  
+                                <!-- More rows and hidden inputs -->                              
+                                  <input type="submit" value="Edit" id="update_order" style="background: linear-gradient(to right, #d93280 0%, #44118c 100%); width: 70px;" />
+                              
+                              </form>
+                           </div>                                           
+                        </td>
+                    </tr>
+                {% endfor %}
+
+        </table>        
+    
+        <form action="/add_new_order_form/orders" method="POST">
+          <div class="button-container">
+                <input type="submit" value="Add New Order" id="add_new_order" style="background: linear-gradient(to right, #d93280 0%, #44118c 100%);" />
+          </div>
+        </form>
+    
+  {% endif %}    
+    
+
+    <!-- Orders details table data -->
+    
+                
+                {% if orders_details %}
+                 <h3>Orders Details Data</h3>
+                <table>  
+                    <tr style="background-color: lightgray;">                      
+                        <th>ID</th>
+                        <th>Order ID</th>
+                        <th>Customer ID</th>
+                        <th>Product ID</th> 
+                        <th>Product Name</th>  
+                        <th>Unit Price</th>                     
+                        <th>Quantity</th>
+                        <th>Order Price</th>
+                        <th>Order Date</th>
+                        <!-- <th>Actions</th> -->
+                    </tr>
+                    {% for orders_detail in orders_details %}
+                    <tr>
+                        <td>{{ orders_detail.id }}</td>
+                        <td>{{ orders_detail.order_id }}</td>
+                        <td>{{ orders_detail.customer_id }}</td>
+                        <td>{{ orders_detail.product_id }}</td>
+                        <td>{{ orders_detail.product_name }}</td>
+                        <td>{{ orders_detail.unit_price }}</td>                        
+                        <td>{{ orders_detail.quantity }}</td>
+                        <td>{{ orders_detail.order_price }}</td>
+                        <td>{{ orders_detail.order_date }}</td>
+                        
+                    </tr>
+                {% endfor %}
+
+        </table>        
+            
+    
+  {% endif %}
+        
+  
+
+
+    </div>     <!--  class="data-display"  -->     
+    <footer>    
+       <p><a href="{{ url_for('search') }}">Go to Search Page</a></p>                    
+     </footer>  
+</div>     <!-- container -->
+</body>
+{% endblock %}

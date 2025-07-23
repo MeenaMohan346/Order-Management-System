@@ -1,0 +1,26 @@
+# Example docker-compose.yml
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5432:5432"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://postgres:meena@db/postgres # Adjust user, password, mydatabase
+    volumes:
+      - .:/app  # Mount the current directory into the container for live updates during development
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres        # Adjust
+      POSTGRES_PASSWORD: meena # Adjust
+      POSTGRES_DB: postgres    # Adjust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persist database data
+
+volumes:
+  postgres_data:
