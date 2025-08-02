@@ -31,7 +31,8 @@ class Product(db.Model):
     __tablename__ = 'products'    
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)    
     product_name = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.String(100))   
+    description = db.Column(db.String(100))  
+    image_url = db.Column(db.String(100)) # Column to store the image URL    
     unit_price = db.Column(db.Float, nullable=False)
     stock_quantity = db.Column(db.Integer)
 
