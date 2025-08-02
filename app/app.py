@@ -1,14 +1,15 @@
 # app.py
 import os
-from flask import Flask, render_template, request,redirect, jsonify, flash, url_for, get_flashed_messages, session
+from flask import Flask, render_template, request,redirect, jsonify, flash, url_for, get_flashed_messages, send_file, session, Response
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import label
+from sqlalchemy import label, create_engine
 from datetime import datetime
 import sys
 import os
-import json
 from sqlalchemy.sql import func
-
+import requests
+import pandas as pd
+import io
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -48,6 +49,10 @@ username = "admin"
 password = "admin123"
 users = {'username': 'admin', 'password': 'admin123'}
 
+# API call to get city, state and country name
+ZIPCODE_API_URL = "http://ZiptasticAPI.com"
+
+
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -79,7 +84,6 @@ def logout():
     session.pop('username', None)
     return redirect(url_for('login'))
 
-
 #db = SQLAlchemy(app)
 models.db.init_app(app) 
 
@@ -96,30 +100,83 @@ def data_display():
         # Process the button click and generate data
         if button_clicked == 'button_a':
             rows_count = models.db.session.query(routes.Customer).count()            
-            if rows_count == 0: # No existing customers, so perform bulk insert                
+            if rows_count == 0: # No existing customers, so perform bulk insert               
                  customers_to_insert = [                     
-                    models.Customer(customer_name='John Smith', email='john.smith@example.com', phone_number='1111111111', shipping_address='123 Main St, Anytown'),
-                    models.Customer(customer_name='Jane Doe', email='jane.doe@example.com', phone_number='1111111112', shipping_address='456 Elm St, AnotherTown'),
-                    models.Customer(customer_name='Michael Johnson', email='michael.johnson@example.com', phone_number='1111111113', shipping_address='789 Oak St, Somewhere'),
-                    models.Customer(customer_name='Emily Wilson', email='emily.wilson@example.com', phone_number='1111111114', shipping_address='567 Pine St, Nowhere'),
-                    models.Customer(customer_name='David Brown', email='david.brown@example.com', phone_number='1111111115', shipping_address='321 Maple St, Anywhere')
+                    models.Customer(customer_name='John Smith', email='john.smith@example.com', phone_number='1111111111', shipping_address='123 Main St, Springfield, MO, 65802, US'),
+                    models.Customer(customer_name='Jane Doe', email='jane.doe@example.com', phone_number='1111111112', shipping_address='456 Elm St, PHOENIX, AZ, 85001, US'),
+                    models.Customer(customer_name='Michael Johnson', email='michael.johnson@example.com', phone_number='1111111113', shipping_address='789 Oak St, PLANO, TX, 75024, US'),
+                    models.Customer(customer_name='Emily Wilson', email='emily.wilson@example.com', phone_number='1111111114', shipping_address='567 Pine St, TRUCKEE, CA, 96162, US'),
+                    models.Customer(customer_name='David Brown', email='david.brown@example.com', phone_number='1111111115', shipping_address='321 Maple St, Houston, TX, 77001, US')
                 ]
                  models.db.session.bulk_save_objects(customers_to_insert)
                  models.db.session.commit()
+            try:   
+                #data = routes.customers()  
+                query = '''SELECT
+                            id, customer_name, email, phone_number, shipping_address,
+                            SUBSTRING(shipping_address FROM 1 FOR POSITION(',' IN shipping_address) - 1) AS address1,
+                            TRIM(SPLIT_PART(shipping_address, ',', 2)) AS city,
+                            TRIM(SPLIT_PART(SPLIT_PART(shipping_address, ',', 3), ' ', 2)) AS state,
+                            TRIM(SPLIT_PART(SPLIT_PART(shipping_address, ',', 4), ' ', 2)) AS zip_code,
+                            TRIM(SPLIT_PART(SPLIT_PART(shipping_address, ',', 5), ' ', 2)) AS country
+                        FROM
+                            customers
+                        ORDER BY customers.id;'''          
 
-            data = routes.customers()            
+                conn = models.db.engine.raw_connection()
+                cursor = conn.cursor() 
+                cursor.execute(query) 
+                rows = cursor.fetchall()                 
+            except Exception as e:
+                print(f"Error: {e}")
+                # Rollback changes if an error occurs
+                conn.rollback()
+            finally:
+                # Close the cursor and connection
+                if 'cursor' in locals() and cursor:
+                    cursor.close()
+                if 'conn' in locals() and conn:
+                    conn.close()             
+
+            customers_list = []  
+            if rows:
+            # Iterate through each row in the 'rows' list
+                for row in rows:
+                # Each 'row' is a tuple containing the values for that row
+                # You can access elements by index
+                    customers_dict = {
+                    "id": row[0],
+                    "customer_name": row[1],
+                    "email": row[2],
+                    "phone_number": row[3],
+                    "shipping_address": row[4],
+                    "address1": row[5],
+                    "city": row[6],
+                    "state": row[7],
+                    "zipcode": row[8],
+                    "country": row[9]                    
+                    }
+                    customers_list.append(customers_dict)  
+                    #print (customers_list)   
+                    
+                return render_template('ordermanagement.html', customers=customers_list)                       
+            else:
+             return render_template('ordermanagement.html')            
         elif button_clicked == 'button_b':
             rows_count = models.db.session.query(routes.Product).count()            
             if rows_count == 0: # No existing products, so perform bulk insert                
                  products_to_insert = [                    
-                    models.Product(product_name='T-Shirt',	description='Comfortable cotton T-shirt.',	unit_price=25,	stock_quantity=200),
-                    routes.Product(product_name='Headphones',	description='Noise-canceling headphones for immersive audio',	unit_price=150,	stock_quantity=75),
-                    routes.Product(product_name='Jeans',	description='Classic denim jeans', unit_price=50,	stock_quantity=150),
-                    routes.Product(product_name='Mouse',	description='Ergonomic wireless mouse',	unit_price=30,	stock_quantity=100),
-                    routes.Product(product_name='Stove',	description='Gas stove top',	unit_price=550,	stock_quantity=100)
+                    models.Product(product_name='Chutney',	description='Indian powders side dish for dosa.',	image_url='/static/images/chutney_powders.png', unit_price=5,	stock_quantity=200),
+                    routes.Product(product_name='Dals',	description='Indian Dals for making curry', image_url='/static/images/dals.png',  unit_price=15,	stock_quantity=75),
+                    routes.Product(product_name='Tea',	description='Indian Tata Tea Powder', image_url='/static/images/indian_tea.png', unit_price=19,	stock_quantity=150),
+                    routes.Product(product_name='Masala',	description='Indian Masala Powders (Spicy)',	image_url='/static/images/masala_powders.png', unit_price=12,	stock_quantity=100),
+                    routes.Product(product_name='Noodles',	description='Millet Noodles (Sun-Dried)', image_url='/static/images/millet_noodles.png', 	unit_price=10,	stock_quantity=50),
+                    routes.Product(product_name='Snacks',	description='Indian Snacks', image_url='/static/images/snacks.png', 	unit_price=14,	stock_quantity=10),
+                    routes.Product(product_name='Sweets',	description='Indian Sweets', image_url='/static/images/sweets.png', 	unit_price=27,	stock_quantity=150),
+                    routes.Product(product_name='Pancake',	description='Millet Pancake Waffle Mix', image_url='/static/images/pancake.png', 	unit_price=11,	stock_quantity=100)
                      ]
                  models.db.session.bulk_save_objects(products_to_insert)
-                 models.db.session.commit()
+                 models.db.session.commit()           
 
             data = routes.products()            
         elif button_clicked == 'button_c':
@@ -138,15 +195,13 @@ def data_display():
             rows_count = models.db.session.query(routes.OrdersDetails).count()            
             if rows_count == 0: # No existing orders details, so perform bulk insert                
                  orders_details_to_insert = [                                        
-                    models.OrdersDetails(order_id=1, product_id=3, quantity=5,	order_price=250),
-                    models.OrdersDetails(order_id=1, product_id=5, quantity=10,	order_price=5500),
-                    models.OrdersDetails(order_id=1, product_id=1, quantity=15,	order_price=330),
-                    models.OrdersDetails(order_id=2, product_id=2, quantity=5,	order_price=750),                    
-                    models.OrdersDetails(order_id=2, product_id=1, quantity=7,	order_price=154),                   
-                    models.OrdersDetails(order_id=3, product_id=3, quantity=2,	order_price=100),
-                    models.OrdersDetails(order_id=3, product_id=4, quantity=7,	order_price=210),
-                    models.OrdersDetails(order_id=3, product_id=5, quantity=10,	order_price=5500),                    
-                    models.OrdersDetails(order_id=3, product_id=1, quantity=20,	order_price=440)                 
+                    models.OrdersDetails(order_id=1, product_id=3, quantity=5,	order_price=95),
+                    models.OrdersDetails(order_id=1, product_id=5, quantity=10,	order_price=100),
+                    models.OrdersDetails(order_id=1, product_id=1, quantity=15,	order_price=75),
+                    models.OrdersDetails(order_id=2, product_id=2, quantity=5,	order_price=75),                    
+                    models.OrdersDetails(order_id=2, product_id=1, quantity=7,	order_price=35),                   
+                    models.OrdersDetails(order_id=3, product_id=3, quantity=2,	order_price=38),
+                    models.OrdersDetails(order_id=3, product_id=4, quantity=7,	order_price=84)                                    
                 ]
                  models.db.session.bulk_save_objects(orders_details_to_insert)
                  models.db.session.commit()         
@@ -193,12 +248,21 @@ def data_display():
 def admin_page():      
     return redirect(url_for('data_display'))
 
+def get_items_with_images():
+    conn = models.db.engine.raw_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, image_path FROM products") #  or base64 encoded image data 
+    items = cursor.fetchall()
+    conn.close()
+    return items
+
 @app.route('/add_new_order_form/<string:table_name>', methods=['GET', 'POST'])
 def add_new_order_form(table_name:str):    
     if request.method == 'POST':
         data = None       
-        if table_name == 'orders':           
-            data = routes.Product.query.order_by(routes.Product.product_name, routes.Product.id).all()                                                                               
+        if table_name == 'orders':  
+            # data = get_items_with_images()        
+            data = routes.Product.query.order_by(routes.Product.product_name, routes.Product.id, routes.Product.image_url).all()                                                                               
             return render_template('add_new_order.html', results=data)           
     else:
         return render_template('ordermanagement.html') 
@@ -209,21 +273,30 @@ def update_order_form(table_name:str, id:int):
         data = None       
         if table_name == 'orders':
             order_id = id
-                       
-            query = '''SELECT orders_details.id, orders_details.order_id, orders.customer_id, orders.region,
+            try:   
+                #data = routes.orders()  
+                query = '''SELECT orders_details.id, orders_details.order_id, orders.customer_id, orders.region,
                     orders_details.product_id, products.product_name, products.unit_price,                  
                     orders_details.quantity, orders_details.order_price, orders.order_date  
                     FROM orders_details 
                     JOIN products ON orders_details.product_id = products.id
                     JOIN orders ON orders_details.order_id = orders.id
-                    WHERE orders.id = ''' + str(order_id)
+                    WHERE orders.id = ''' + str(order_id)          
 
-            conn = models.db.engine.raw_connection()
-            cursor = conn.cursor()            
-            #print(query)
-
-            cursor.execute(query) 
-            rows = cursor.fetchall()  
+                conn = models.db.engine.raw_connection()
+                cursor = conn.cursor() 
+                cursor.execute(query) 
+                rows = cursor.fetchall()                 
+            except Exception as e:
+                print(f"Error: {e}")
+                # Rollback changes if an error occurs
+                conn.rollback()
+            finally:
+                # Close the cursor and connection
+                if 'cursor' in locals() and cursor:
+                    cursor.close()
+                if 'conn' in locals() and conn:
+                    conn.close()             
 
             orders_list = []  
             if rows:
@@ -283,19 +356,22 @@ def update(table_name:str, id:int):
     elif table_name == 'orders':
         update_row = routes.Order.query.get_or_404(id)
         order_id = id
-    """ elif table_name == 'orders_details':
-        update_row = routes.OrdersDetails.query.get_or_404(id)  """    
 
     if request.method == "POST":
         if table_name == 'customers':            
             row = update_row # routes.Customer.query.get(id)
             row.customer_name = request.form['customer_name']
             row.email = request.form['email']
-            row.phone_number = request.form['phone_number']
-            row.shipping_address = request.form['shipping_address']   
+            row.phone_number = request.form['phone_number']            
+            address1 = request.form['address1'] 
+            city = request.form['city'] 
+            state = request.form['state'] 
+            zipcode = request.form['zipcode']  
+            country = request.form['country'] 
+            row.shipping_address = address1 + ", " + city + ", " + state + ", " + zipcode + ", " + country
             try:
                 models.db.session.commit()
-                flash("Success: Updated customer table successfully.")
+                flash("Success: Updated customer data successfully.")
                 return redirect(url_for('admin_page')) 
             except Exception as e:
                 return f"ERROR:{e}"
@@ -387,17 +463,39 @@ def update(table_name:str, id:int):
             flash("Success: Added new order and orders details entries successfully.")               
             return redirect(url_for('admin_page'))        
     else:
-        return render_template("ordermanagement.html")    
+        return render_template("ordermanagement.html")   
+@app.route('/get_city_state_country', methods=['POST'])
+def get_city_state_country():
+    zipcode = request.form['zipcode'] # Get zipcode from form submission
+
+    # Make API call to fetch city data    
+    response = requests.get(f"{ZIPCODE_API_URL}/{zipcode}" )
+    #response = requests.get(api_url) # {"country":"US","state":"xx","city":"xxxxx"}
+
+    if response.status_code == 200:
+        data = response.json()
+        city = data.get('city', 'N/A') # Extract city from API response
+        state = data.get('state', 'N/A') # Extract state from API response
+        country = data.get('country', 'N/A') # Extract country from API response
+        return jsonify({'city': city, 'state': state, 'country': country}) # Return city, state, country as JSON response
+    else:
+        return jsonify({'city': 'Error fetching city'}) 
     
 @app.route("/create/<string:table_name>", methods=['POST'])
-def create(table_name:str):
-    #print(request.form)
+def create(table_name:str):    
     table_data = []
     if table_name == 'customers':         
         customer_name_new = request.form['customer_name']
         email_new = request.form['email']
         phone_number_new = request.form['phone_number']
-        shipping_address_new = request.form['shipping_address']
+        address1_new = request.form['address1']
+        address2_new = request.form['address2']
+        zipcode_new = request.form['zipcode']
+        city_new = request.form['city']
+        state_new = request.form['state'] 
+        country_new = request.form['country']
+        shipping_address_new = address1_new + " " + address2_new + ", " + city_new + ", " + state_new + ", " + zipcode_new + ", " + country_new
+        
         new_customer = models.Customer(customer_name=customer_name_new, email=email_new, phone_number=phone_number_new, shipping_address=shipping_address_new)
           
     elif table_name == 'products':
@@ -507,9 +605,9 @@ def search():
         conn = models.db.engine.raw_connection()
         cursor = conn.cursor()
         
-        # call the function get_customers   
-        #call_function_script_customers= "SELECT * FROM get_customers({id_input}, {customer_name_input}, {email_input}, {phone_number_input});"
-        call_function_script_customers= "SELECT * FROM get_customers(%s, %s, %s, %s);"        
+        # call the function search_customers   
+        #call_function_script_customers= "SELECT * FROM search_customers({id_input}, {customer_name_input}, {email_input}, {phone_number_input});"
+        call_function_script_customers= "SELECT * FROM search_customers(%s, %s, %s, %s);"        
         
         cursor.execute(call_function_script_customers, ((id_input, customer_name_input, email_input, phone_number_input)))    
         rows = cursor.fetchall()  
@@ -530,15 +628,51 @@ def search():
             
             return render_template('search_results.html', results=customers_list)
         else:
-            return jsonify({"message": "User not found"}), 404
+            """ return jsonify({"message": "User not found"}), 404 """
+            flash("Fail: No customer found.") 
+            return redirect(url_for('search_page'))
 
     except Exception as e: 
-        return jsonify({"error": str(e)}), 500
+        flash("Error: No customer found.") 
+        return redirect(url_for('search_page'))
     finally:
         if conn:
-            conn.close()   
+            conn.close() 
 
+def get_data_from_db(table_name):
+    if table_name == 'customers':
+        query = "SELECT * FROM customers ORDER BY id"    
+    elif table_name == 'products':
+        query = "SELECT * FROM products ORDER BY id" 
+    elif table_name == 'orders':
+        query = "SELECT * FROM orders ORDER BY id" 
+    elif table_name == 'orders_details':
+        query = "SELECT * FROM orders_details ORDER BY id" 
+ 
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])     
+    df = pd.read_sql_query(query, engine)
+    return df
+
+def create_excel_file(dataframe):
+        output = io.BytesIO()
+        writer = pd.ExcelWriter(output, engine='xlsxwriter') # Or 'openpyxl'
+        dataframe.to_excel(writer, index=False, sheet_name='Sheet1')
+        writer.close() # Use writer.save() for older pandas versions
+        output.seek(0)
+        return output
+        
+
+@app.route('/export_excel/<string:table_name>')
+def export_excel(table_name:str):
+    df = get_data_from_db(table_name)
+    excel_data = create_excel_file(df)
+    return send_file(
+        excel_data,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=table_name + '_export.xlsx'
+    )
 
 # Runner and debugger
 if __name__ == '__main__':
-    app.run(debug=True)  
+    app.run(debug=False)  
