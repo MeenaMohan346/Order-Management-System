@@ -5,20 +5,25 @@ document.getElementsByTagName('head')[0].appendChild(script);
 
 var script = document.createElement('script');
 script.src = src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"; 
-document.getElementsByTagName('head')[0].appendChild(script);
+document.getElementsByTagName('head')[0].appendChild(script);      
 
  function openEditModal(table_name, id) {  
     if (table_name == "customers") {
         fetch(`/update/customers/${id}`, { method: 'POST',
             headers: { 'Content-Type': 'application/json' }},)
             .then(response => response.json())
-            .then(data => {    
-
+            .then(data => {            
+        
         document.getElementById('editId').value = id;
         document.getElementById('editCustomername').value = 'customer_name';  
         document.getElementById('ediEmail').value = 'email'; 
         document.getElementById('editPhonenumber').value = 'phone_number'; 
-        document.getElementById('editShippingaddress').value = 'shipping_address';    
+        /* document.getElementById('editShippingaddress').value = 'shipping_address';   */ 
+        document.getElementById('editAddress1').value = 'address1'; 
+        document.getElementById('editCity').value = 'city'; 
+        document.getElementById('editState').value = 'state'; 
+        document.getElementById('editZipcode').value = 'zipcode'; 
+        document.getElementById('editCountry').value = 'country';       
         document.getElementById('editModal'+ id).style.display = "none";
         });
 
