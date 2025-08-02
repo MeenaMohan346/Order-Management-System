@@ -6,13 +6,15 @@ INSERT INTO customers (customer_name, email, phone_number, shipping_address)
 	('Emily Wilson', 'emily.wilson@example.com', '1111111114', '567 Pine St, Nowhere'),
 	('David Brown', 'david.brown@example.com', '1111111115', '321 Maple St, Anywhere');
 
-INSERT INTO products(product_name, description, unit_price, stock_quantity)
-VALUES
-('T-Shirt',	'Comfortable cotton T-shirt.',	25,	200),
-('Headphones',	'Noise-canceling headphones for immersive audio',	150,	75),
-('Jeans',	'Classic denim jeans'	,50,	150),
-('Mouse',	'Ergonomic wireless mouse',	30,	100),
-('Stove',	'Gas stove top',	550,	100);
+INSERT INTO products (product_name, description, image_url, unit_price, stock_quantity)
+VALUES ('Chutney',	'Indian powders side dish for dosa.',	'/static/images/chutney_powders.png', 5,	200),
+('Dals',	'Indian Dals for making curry', '/static/images/dals.png',  15,	75),
+('Tea',	'Indian Tata Tea Powder', '/static/images/indian_tea.png', 19,	150),
+('Masala',	'Indian Masala Powders (Spicy)',	'/static/images/masala_powders.png', 12,	100),
+('Noodles',	'Millet Noodles (Sun-Dried)', '/static/images/millet_noodles.png', 	10,	50),
+('Snacks',	'Indian Snacks', '/static/images/snacks.png', 	14,	10),
+('Sweets',	'Indian Sweets', '/static/images/sweets.png', 	27,	150),
+('Pancake',	'Millet Pancake Waffle Mix', '/static/images/pancake.png', 	11,	100);
 
 INSERT INTO orders (customer_id,region,order_date)
 	VALUES
