@@ -2,6 +2,7 @@
 
 {% block head %}
 <title>Order Management Details</title> 
+
 <style>
         table {
             border-collapse: collapse;
@@ -15,9 +16,50 @@
         td.editable {
             background-color: #f0f0f0; /* Highlight editable cells */
         }
+        .option-image {
+            width: 20px; /* Adjust as needed */
+            height: 20px; /* Adjust as needed */
+            vertical-align: middle;
+            margin-right: 5px;
+        }
 </style>
-<script> 
-   function getSelectedNameByValue(dropdownId, valueToMatch) {
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('.product-selection-multiple').select2();
+});
+$(".product-selection-multiple").select2({
+    theme: "classic"
+});
+
+$(document).ready(function() {
+   function formatOption(option) {
+        if (!option.id) {
+            return option.text;
+        }
+        console.log('option id: ' + option.imageUrl)
+        path = '/static/images/'       
+       $(option.element).data('img');
+        var imageUrl = $(option.element).data('img'); 
+        var optionWithImage = $(
+            '<span><img src="' + imageUrl + '" class="img-flag" style="max-height: 20px; max-width: 35px;"/> ' + option.text + '</span>'
+        );        
+        return optionWithImage;
+    }
+    $('#product_select').select2({
+        templateResult: formatOption,
+        templateSelection: formatOption,
+        minimumResultsForSearch: Infinity
+    });
+});
+</script>
+
+<script>   
+ function getSelectedNameByValue(dropdownId, valueToMatch) {
         const dropdown = document.getElementById(dropdownId); // Get the dropdown element by its ID
         const options = dropdown.options; // Get the collection of options within the dropdown
 
@@ -29,8 +71,9 @@
 
         return null; // Return null if no matching value is found
     }
-   function addRows() {
-    const dropdown = document.getElementById("product_selection_dropdown");
+
+ function addRows() {
+    const dropdown = document.getElementById("product_select");
     const tableBody = document.getElementById("product_table").getElementsByTagName("tbody")[0];
 
     // Get selected options
@@ -48,7 +91,7 @@
 
         // Cell for the selected item name (read-only)
         const itemCellName = newRow.insertCell();
-        const itemName = getSelectedNameByValue('product_selection_dropdown', itemValue);
+        const itemName = getSelectedNameByValue('product_select', itemValue);
         itemCellName.textContent = itemName;
 
         // Cell for the editable value
@@ -61,15 +104,14 @@
         itemCellName.innerHTML = '<input type="text" name="data_item_name[]" value=' + itemName + ' disabled>';
         editableCell.innerHTML = '<input type="number" name="data_item_quantity[]" required>';
     });
-}
+} 
+</script> 
 
-</script>  
 
 {% endblock %}
 
 {% block body %} 
-
-    <div class="container">    
+<div class="container">    
         <h2>Order Management System</h2> 
         {% with messages = get_flashed_messages() %}
             {% if messages %} 
@@ -80,9 +122,8 @@
         {% endif %} {% endwith %}            
                          
             
-            <div class="data-display">     
-
-    {% if results %}
+         <div class="data-display"> 
+           {% if results %}
         <h3>Add New Order</h3>
         
        <form action="/create/orders" method="POST">
@@ -94,24 +135,27 @@
                 <div>
                     <label for="region">Region:</label>
                      <input type="text" name="region" id="region" maxlength="20", required class="input-field animation a3" />
-                </div>
+                </div>         
                 <div>
-                    <label for="product">Choose an option for Product:</label>
-                    <select id="product_selection_dropdown" multiple type="text" name="product_selection_option" placeholder="Select a Product" style="width: 190px; height: 100px;">
-                        <option disabled selected>Select a product</option>
+                    <label for="product">Click this to highlight the multiple select products:</label> 
+                                       
+                    <select class="product-selection-multiple" id="product_select" name="products[]" multiple="multiple" data-placeholder="Select a Product" style="width: 25%;">
+                     
                         {% for item in results %}                            
-                            <option value={{ item.id }}>{{ item.product_name }}</option>
-                        {% endfor %}
-                    </select>                    
-                </div>                
+                            <option value={{ item.id }} data-img={{ item.image_url }} data-img-width="5px" data-img-height="2px">{{ item.product_name }}                                
+                            </option>                            
+                        {% endfor %}                        
+                    </select>   
+                </div>                     
+        
                 <div>
                     <label for="order_date">Order Date:</label>
                     <input type="datetime-local" name="order_date" id="order_date" required class="input-field animation a3" />
-                </div>
+                </div> 
                
             </div> 
-            
-            <button onclick="addRows()">Add Selected Items</button>
+            <br/><br/><br/><br/><br/><br/>
+            <button type="button" id="addSelect" onclick="addRows()">Add Selected Items</button> 
 
             <table id="product_table">
                 <thead>
@@ -125,15 +169,15 @@
                 </tbody>
             </table>
             <div class="button-container">
-                <input type="submit" value="Add Order" id="add_order" style="background: linear-gradient(to right, #d93280 0%, #44118c 100%);" />
+                <input type="submit" value="Add Order" id="add_order" style="background: linear-gradient(to right, #d93280 0%, #44118c 100%);" />                  
             </div>
      </form>
     {% elif request.method == 'POST' %}
         <p>No customers found matching your criteria.</p>
     {% endif %}
 
-    </div>      <!--  class="data-display"  -->       
-
+    </div>      <!--  class="data-display"  --> 
+    
 <footer>    
      <p><a href="{{ url_for('admin_page') }}">Go to Admin Page</a></p>
                     

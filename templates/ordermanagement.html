@@ -9,10 +9,41 @@
     <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>  
     
+    <script>
+        $(document).ready(function(){
+            $('#zipcode, #editZipcode').on('keyup', function(){ // Trigger on keyup event              
+                var zipcode = $(this).val();
+                if (zipcode.length === 5) { // Only send request if zipcode is 5 digits long
+                    $.ajax({
+                        url: '/get_city_state_country',
+                        type: 'POST',
+                        data: {zipcode: zipcode},
+                        success: function(response){
+                            $('#city').val(response.city); // Populate city field
+                            $('#state').val(response.state); // Populate state field
+                            $('#country').val(response.country); // Populate country field
+                            $('#editCity').val(response.city); // Populate city field
+                            $('#editState').val(response.state); // Populate state field
+                            $('#editCountry').val(response.country); // Populate country field
+                        },
+                        error: function(error){
+                            console.log(error);
+                        }
+                    });
+                } else {
+                    $('#city').val(''); // Clear city field if zipcode is not 5 digits
+                    $('#state').val(''); // Clear state field if zipcode is not 5 digits
+                    $('#country').val(''); // Clear country field if zipcode is not 5 digits
+                }
+            });
+        });       
+    </script>
+    
 
 {% endblock %}
 
 {% block body %} 
+
 
     <div class="container">    
         <h2>Order Management System</h2> 
@@ -36,7 +67,8 @@
             <div class="data-display">                
                          
             {% if customers %}
-            <h3>Customers Data</h3> 
+            <h3>Customers Data</h3>   
+            <a href="/export_excel/customers" style="float: right;"><img src="/static/images/excel.jpeg" alt="Export to excel" width="30" height="20"></a>           
             <table>  
                     <tr style="background-color: lightgray;">
                         <th>ID</th>
@@ -47,6 +79,7 @@
                         <th>Actions</th>
                     </tr>
                     {% for customer in customers %}
+                    
                     <tr>
                         <td>{{ customer.id }}</td>
                         <td>{{ customer.customer_name }}</td>
@@ -70,32 +103,57 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body" style="background-color:#f3d1ee">
+      <div class="modal-body" style="background-color:#f3d1ee; height: 600px;">
         <form id="editForm" method="POST" action="/update/customers/{{customer.id}}">            
           <div class="form-group padded-input">
-            <label class="col-form-label" for="editId">ID</label>
+            <label class="col-form-label" for="editId">ID:</label>
             <input type="text" style="background-color:#CDCDCD;" class="form-control" name="id" value="{{customer.id}}" id="editId" disabled />
           </div>
           <div class="form-group">
-            <label class="col-form-label" for="editCustomername">Customer Name</label>
+            <label class="col-form-label" for="editCustomername">Customer Name:</label>
             <input type="text" style="background-color:#CDCDCD" class="form-control" name="customer_name" value="{{customer.customer_name}}" id="editCustomername" required minlength="5" maxlength="50"/>
             <span id="usernameError" style="color: red;"></span>
           </div>
           <div class="form-group">
-            <label class="col-form-label" for="editEmail">Email</label>
+            <label class="col-form-label" for="editEmail">Email:</label>
             <input type="text" style="background-color:#CDCDCD" class="form-control" name="email" value="{{customer.email}}" id="editEmail" pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="Invalid email address" maxlength="50" required />
             <span id="emailError" style="color: red;"></span>
           </div>
           <div class="form-group">
-            <label class="col-form-label" for="editPhonenumber">Phone Number</label>
+            <label class="col-form-label" for="editPhonenumber">Phone Number:</label>
             <input type="text" style="background-color:#CDCDCD" class="form-control" name="phone_number" value="{{customer.phone_number}}" id="editPhonenumber" pattern="[1-9]{1}[0-9]{9}" title="Enter 10 digit phone number" placeholder="Phone number" required/>
             <span id="phonenumberError" style="color: red;"></span>
           </div>
-          <div class="form-group">
-            <label class="col-form-label" for="editShippingaddress">Shipping Address</label>
-            <input type="text" style="background-color:#CDCDCD"  class="form-control" name="shipping_address" value="{{customer.shipping_address}}" id="editShippingaddress" required minlength="5" maxlength="100"/>
-            <span id="shippingaddressError" style="color: red;"></span>
-          </div>
+          <div class="form-group">                
+                <label class="col-form-label" for="editAddress1">Address Line 1:</label>                
+                <input type="text" style="background-color:#CDCDCD" class="form-control" name="address1"  value="{{customer.address1}}" id="editAddress1" placeholder="Address1" required/>
+                </div>
+
+               <div class="form-group">
+                  <label class="col-form-label" for="editAddress2">Address Line 2 (Optional):</label>                  
+                  <input type="text" style="background-color:#CDCDCD" class="form-control" name="address2"  value="" id="editAddress2" placeholder="Address2 Optional" />
+               </div>
+               <p style="text-align: center; color: darkblue; font-weight: bold; font-size: medium;"> Enter Zip code. City, State and Country will auto populate </p>
+
+               <div class="form-group city-state-zip-modal">
+                  <div>
+                      <label class="col-form-label" style="width: 50px;" for="editCity">City:</label>                      
+                      <input type="text" style="background-color:#CDCDCD; width:170px;" class="form-control" name="city" value="{{customer.city}}" id="editCity" placeholder="City" required/>
+                  </div>
+                  <div>                      
+                      <label class="col-form-label" style="width: 50px;" for="editState">State:</label>                     
+                      <input type="text" style="background-color:#CDCDCD; width:170px;" class="form-control" name="state" value="{{customer.state}}" id="editState" placeholder="State" required/>
+                  </div>
+                  <div>                      
+                      <label class="col-form-label" style="width: 50px;" for="editCountry">Country:</label>                      
+                      <input type="text" style="background-color:#CDCDCD; width:170px;" class="form-control" name="country" value="{{customer.country}}" id="editCountry" placeholder="Country" required/>
+                  </div>
+                  <div>                      
+                      <label class="col-form-label" style="width: 50px;" for="editZipcode">Zip&nbsp;&nbsp;Code:</label>                      
+                      <input type="text" style="background-color:#CDCDCD; width:170px;" class="form-control" name="zipcode" value="{{customer.zipcode}}" id="editZipcode" placeholder="Zip Code" required pattern="\d{5}(-\d{4})?" />
+                  </div>
+               </div>
+
           </br>
           </br> 
           <div class="button-center">                    
@@ -112,6 +170,7 @@
                                                    
                         </td>
                     </tr>
+                  
                 {% endfor %}
 
         </table> 
@@ -130,9 +189,35 @@
                     <label for="phone_number">Phone Number:</label>
                     <input type="text" name="phone_number" id="phone_number" pattern="[1-9]{1}[0-9]{9}" title="Enter 10 digit mobile number" placeholder="Phone number" class="input-field animation a3" />
                 </div>
-                <div>
-                    <label for="shipping_address">Shipping Address:</label>
-                    <input type="text" name="shipping_address" id="shipping_address" placeholder="Shipping Address" class="input-field animation a3" />
+                
+               <div class="form-group">
+                <label for="address1">Address Line 1:</label>
+                <input type="text" id="address1" name="address1" required>
+               </div>
+
+               <div class="form-group">
+                  <label for="address2">Address Line 2 (Optional):</label>
+                  <input type="text" id="address2" name="address2">
+               </div>
+               <p style="text-align: center; color: darkblue; font-weight: bold; font-size: medium;"> Enter Zip code. City, State and Country will auto populate </p>
+
+               <div class="form-group city-state-zip" style="width: 500px;">
+                  <div>
+                      <label for="city" style="width: 70px; text-align: center;">City:</label>
+                      <input type="text" id="city" name="city" required>
+                  </div>
+                  <div>
+                      <label for="state" style="width: 70px; text-align: center;">State:</label>
+                      <input type="text" id="state" name="state" required>
+                  </div>
+                  <div>
+                      <label for="country" style="width: 70px; text-align: center;">Country:</label>
+                      <input type="text" id="country" name="country" required>
+                  </div>
+                  <div>
+                      <label for="zipcode" style="width: 70px; text-align: center;">Zip Code:</label>
+                      <input type="text" id="zipcode" name="zipcode" required pattern="\d{5}(-\d{4})?">
+                  </div>
                 </div>
                 <div class="button-container">
                     <input type="submit" value="Add Customer" id="add_customer" style="background: linear-gradient(to right, #d93280 0%, #44118c 100%);" class="animation a6"/>
@@ -149,6 +234,7 @@
                 
                 {% if products %}
                 <h3>Products Data</h3>
+                <a href="/export_excel/products" style="float: right;"><img src="/static/images/excel.jpeg" alt="Export to excel" width="30" height="20"></a>
                 <table>  
                     <tr style="background-color: lightgray;">
                         <th>ID</th>
@@ -255,6 +341,7 @@
                 {% if orders %}
                 <!-- Display orders if they exist -->
                  <h3>Orders Data</h3>
+                 <a href="/export_excel/orders" style="float: right;"><img src="/static/images/excel.jpeg" alt="Export to excel" width="30" height="20"></a>
                 <table>  
                     <tr style="background-color: lightgray;">
                         <th>ID</th>
@@ -276,7 +363,7 @@
                             <div style="vertical-align: middle; padding-left: 130px;"> 
                               <form action="/update_order_form/orders/{{order.id}}" method="POST">                                  
                                 <!-- More rows and hidden inputs -->                              
-                                  <input type="submit" value="Edit" id="update_order" style="background: linear-gradient(to right, #d93280 0%, #44118c 100%); width: 70px;" />
+                                  <input type="submit" value="Edit" id="update_order" style="background: linear-gradient(to right, #d93280 0%, #44118c 100%); width: 70px; color: white;" />
                               
                               </form>
                            </div>                                           
@@ -300,6 +387,7 @@
                 
                 {% if orders_details %}
                  <h3>Orders Details Data</h3>
+                 <a href="/export_excel/orders_details" style="float: right;"><img src="/static/images/excel.jpeg" alt="Export to excel" width="30" height="20"></a>
                 <table>  
                     <tr style="background-color: lightgray;">                      
                         <th>ID</th>
