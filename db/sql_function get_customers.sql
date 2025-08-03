@@ -51,7 +51,7 @@ ELSEIF p_phone_number IS NOT NULL AND TRIM(p_phone_number) <> '' THEN
   RETURN QUERY
   SELECT customers.id, customers.customer_name, customers.email, customers.phone_number, customers.shipping_address
   FROM customers   
-  WHERE customers.p_phone_number = p_phone_number
+  WHERE customers.phone_number = p_phone_number
   ORDER BY customers.id;
 ELSE
    RETURN QUERY
